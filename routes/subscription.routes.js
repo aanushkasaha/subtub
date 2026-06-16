@@ -12,18 +12,15 @@ import {
 
 const subscriptionRouter = Router();
 
-subscriptionRouter.get("/:id", authorize, getSubscription);
-
-subscriptionRouter.post("/", authorize, createSubscription);
-
-subscriptionRouter.put("/:id", authorize, updateSubscription);
-
-subscriptionRouter.delete("/:id", authorize, deleteSubscription);
-
+// Static routes first
+subscriptionRouter.get("/upcoming-renewals", authorize, getUpcomingRenewals);
 subscriptionRouter.get("/user/:id", authorize, getUserSubscriptions);
 
+// Dynamic routes after
+subscriptionRouter.get("/:id", authorize, getSubscription);
+subscriptionRouter.post("/", authorize, createSubscription);
 subscriptionRouter.put("/:id/cancel", authorize, cancelSubscription);
-
-subscriptionRouter.get("/upcoming-renewals", authorize, getUpcomingRenewals);
+subscriptionRouter.put("/:id", authorize, updateSubscription);
+subscriptionRouter.delete("/:id", authorize, deleteSubscription);
 
 export default subscriptionRouter;

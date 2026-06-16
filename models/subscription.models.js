@@ -5,25 +5,28 @@ const subscriptionSchema = new mongoose.Schema(
     name: {
       type: String,
       trim: true,
-      required: [true, "Subscription name is required"],
-      maxLength: 100,
+      required: [true, "Subscription name is required."],
+      maxlength: [100, "Name cannot exceed 100 characters."],
     },
     price: {
       type: Number,
-      required: [true, "Subscription Rate is required"],
+      required: [true, "Subscription price is required."],
+      min: [0, "Price cannot be negative."],
     },
     currency: {
       type: String,
-      required: [true, "Currency is required"],
+      required: [true, "Currency is required."],
       enum: ["INR", "USD"],
       default: "INR",
     },
     frequency: {
       type: String,
+      required: [true, "Frequency is required."],
       enum: ["daily", "weekly", "monthly", "annually"],
     },
     category: {
       type: String,
+      required: [true, "Category is required."],
       enum: [
         "sports",
         "news",
@@ -34,11 +37,10 @@ const subscriptionSchema = new mongoose.Schema(
         "politics",
         "others",
       ],
-      required: true,
     },
     paymentMethod: {
       type: String,
-      required: true,
+      required: [true, "Payment method is required."],
       trim: true,
     },
     status: {
@@ -48,51 +50,59 @@ const subscriptionSchema = new mongoose.Schema(
     },
     startDate: {
       type: Date,
-      required: true,
+      required: [true, "Start date is required."],
       validate: {
         validator: (val) => val <= new Date(),
-        message: "Start date must be in the past",
+        message: "Start date must not be in the future.",
       },
     },
     renewalDate: {
-      type: Date,
-      required: true,
+      type: Date, // not required — pre-save hook calculates it
       validate: {
         validator: function (val) {
           return val > this.startDate;
         },
-        message: "Renewal date must be after start date",
+        message: "Renewal date must be after start date.",
       },
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: [true, "User is required."],
       index: true,
     },
   },
   { timestamps: true },
 );
 
-//auto calculate renewal date if missing.
 subscriptionSchema.pre("save", function (next) {
+  // Auto-calculate renewalDate from frequency
   if (!this.renewalDate) {
-    const renewalPeriods = {
-      daily: 1,
-      weekly: 7,
-      monthly: 30,
-      annually: 365,
-    };
-    this.renewalDate = new Date(this.startDate);
-    this.renewalDate.setDate(
-      this.renewalDate.getDate() + renewalPeriods[this.frequency],
-    );
+    const date = new Date(this.startDate);
+
+    switch (this.frequency) {
+      case "daily":
+        date.setDate(date.getDate() + 1);
+        break;
+      case "weekly":
+        date.setDate(date.getDate() + 7);
+        break;
+      case "monthly":
+        date.setMonth(date.getMonth() + 1);
+        break;
+      case "annually":
+        date.setFullYear(date.getFullYear() + 1);
+        break;
+    }
+
+    this.renewalDate = date;
   }
 
-  //auto update if renewal date is passed.
-  if (this.renewalDate < new Date()) {
+  // Auto-expire if renewal date has passed
+  if (this.renewalDate < new Date() && this.status === "active") {
     this.status = "expired";
   }
+
   next();
 });
 
