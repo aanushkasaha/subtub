@@ -1,6 +1,25 @@
 import { config } from "dotenv";
 
 config({ path: `.env.${process.env.NODE_ENV || "development"}.local` });
+
+const requiredVars = [
+  "PORT",
+  "DB_URI",
+  "JWT_SECRET",
+  "JWT_EXPIRES_IN",
+  "ARCJET_KEY",
+  "QSTASH_TOKEN",
+  "QSTASH_URL",
+  "SERVER_URL",
+  "EMAIL_PASSWORD",
+];
+
+for (const key of requiredVars) {
+  if (!process.env[key]) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+}
+
 export const {
   PORT,
   NODE_ENV,

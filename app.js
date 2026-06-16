@@ -15,19 +15,31 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(arcjetMiddleware);
+
+app.get("/", (req, res) => {
+  res.send("Welcome to subtub: Your favourite Subscription Tracker API");
+});
+
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/subscriptions", subscriptionRouter);
 app.use("/api/v1/workflows", workflowRouter);
 
 app.use(errorMiddleware);
-app.get("/", (req, res) => {
-  res.send("Welcome to subtub: Your favourite Subscription Tracker API");
-});
-app.listen(PORT, async () => {
-  console.log(`Subscription Tracker API is running on port ${PORT}`);
 
-  connect_db();
-});
+const startServer = async () => {
+  try {
+    await connect_db();
+    console.log("Database connected");
+    app.listen(PORT, () => {
+      console.log(`Subscription Tracker API is running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error.message);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 export default app;
