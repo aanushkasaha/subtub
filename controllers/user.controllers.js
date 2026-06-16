@@ -1,38 +1,31 @@
 import User from "../models/User.models.js";
+import bcrypt from "bcryptjs";
 
-//fetch all users from the database.
 export const getUsers = async (req, res, next) => {
   try {
-    const users = await User.find();
+    const users = await User.find().select("-password");
     res.status(200).json({ success: true, data: users });
   } catch (error) {
     next(error);
   }
 };
 
-//fetch a sigular user from the database.
 export const getUser = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id).select("-password"); //passwod hatake sab field chahiye.
-    //user isnt found.
+    const user = await User.findById(req.params.id).select("-password");
     if (!user) {
-      const error = new Error("User Not Found");
+      const error = new Error("User not found.");
       error.statusCode = 404;
       throw error;
     }
-
     res.status(200).json({ success: true, data: user });
   } catch (error) {
     next(error);
   }
 };
 
-import User from "../models/User.models.js";
-import bcrypt from "bcryptjs";
-
 export const updateUser = async (req, res, next) => {
   try {
-    // Only allow a user to update their own profile
     if (req.user._id.toString() !== req.params.id) {
       return res
         .status(403)
@@ -77,7 +70,6 @@ export const updateUser = async (req, res, next) => {
 
 export const deleteUser = async (req, res, next) => {
   try {
-    // Only allow a user to delete their own account
     if (req.user._id.toString() !== req.params.id) {
       return res
         .status(403)
