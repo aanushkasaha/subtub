@@ -26,7 +26,7 @@ export const signUp = async (req, res, next) => {
       { session },
     );
 
-    const token = jwt.sign({ userId: newUser[0]._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: newUser[0]._id }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
     });
 
@@ -70,12 +70,15 @@ export const signIn = async (req, res, next) => {
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
     });
-    res.status(201).json({
+
+    const { password: _, ...safeUser } = user.toObject();
+
+    res.status(200).json({
       success: true,
       message: "User signed in successfully",
       data: {
         token,
-        user,
+        user: safeUser,
       },
     });
   } catch (err) {
@@ -83,4 +86,9 @@ export const signIn = async (req, res, next) => {
   }
 };
 
-export const signOut = async (req, res) => {};
+export const signOut = async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "User signed out successfully",
+  });
+};
