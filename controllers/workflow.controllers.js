@@ -2,8 +2,13 @@ import dayjs from "dayjs";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const { serve } = require("@upstash/workflow/express");
+import { Receiver } from "@upstash/qstash";
 import Subscription from "../models/subscription.models.js";
 import { sendReminderEmail } from "../utils/send-email.js";
+import {
+  QSTASH_CURRENT_SIGNING_KEY,
+  QSTASH_NEXT_SIGNING_KEY,
+} from "../config/env.js";
 
 const reminders = [
   { label: "7 days before reminder", daysBefore: 7 },
@@ -25,6 +30,13 @@ export const sendReminders = serve(async (context) => {
 
   if (!subscription) {
     console.error("Subscription not found");
+    return;
+  }
+
+  if (!subscription.user) {
+    console.error(
+      `Subscription "${subscription.name}" has no associated user (likely deleted). Stopping workflow.`,
+    );
     return;
   }
 
@@ -92,4 +104,11 @@ export const sendReminders = serve(async (context) => {
       }
     }
   }
+}, {
+  // Verifies that incoming requests are genuinely signed by QStash,
+  // not just anyone POSTing to this public endpoint.
+  receiver: new Receiver({
+    currentSigningKey: QSTASH_CURRENT_SIGNING_KEY,
+    nextSigningKey: QSTASH_NEXT_SIGNING_KEY,
+  }),
 });

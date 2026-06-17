@@ -1,4 +1,4 @@
-import aj from "../config/arcjet.config.js";
+import { aj } from "../config/arcjet.config.js";
 
 export const arcjetMiddleware = async (req, res, next) => {
   try {
