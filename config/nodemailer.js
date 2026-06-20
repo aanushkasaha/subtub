@@ -9,6 +9,7 @@ export const transporter = nodemailer.createTransport({
     user: accountEmail,
     pass: EMAIL_PASSWORD,
   },
+  family: 4,
 });
 
 // Verify connection at startup
