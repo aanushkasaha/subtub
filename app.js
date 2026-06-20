@@ -15,16 +15,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+app.get("/", (req, res) => {
+  res.send("Welcome to subtub: Your favourite Subscription Tracker API");
+});
+
 // Arcjet's bot detection flags tools like Postman as bots, which is
 // useful in production (real attack traffic) but just friction during
 // local development/testing. Skip it in development, keep it everywhere else.
 if (NODE_ENV !== "development") {
   app.use(arcjetMiddleware);
 }
-
-app.get("/", (req, res) => {
-  res.send("Welcome to subtub: Your favourite Subscription Tracker API");
-});
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
