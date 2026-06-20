@@ -75,7 +75,10 @@ const subscriptionSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-subscriptionSchema.pre("save", function (next) {
+// Mongoose 9 no longer passes a next() callback to pre("save") hooks —
+// the first argument is now the save() call's options object instead.
+// A plain (non-callback) function just needs to finish; no next() needed.
+subscriptionSchema.pre("save", function () {
   // Auto-calculate renewalDate from frequency
   if (!this.renewalDate) {
     const date = new Date(this.startDate);
@@ -102,8 +105,6 @@ subscriptionSchema.pre("save", function (next) {
   if (this.renewalDate < new Date() && this.status === "active") {
     this.status = "expired";
   }
-
-  next();
 });
 
 const Subscription = mongoose.model("Subscription", subscriptionSchema);

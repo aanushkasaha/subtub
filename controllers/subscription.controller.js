@@ -9,16 +9,31 @@ export const createSubscription = async (req, res, next) => {
       user: req.user._id,
     });
 
-    const { workflowRunId } = await workflowClient.trigger({
-      url: `${SERVER_URL}/api/v1/workflows/subscription/reminder`,
-      body: {
-        subscriptionId: subscription.id,
-      },
-      headers: {
-        "content-type": "application/json",
-      },
-      retries: 0,
-    });
+    // The subscription is already saved at this point. Scheduling the
+    // reminder workflow is a side effect, not the core action — if it
+    // fails (e.g. Upstash hiccup, unreachable SERVER_URL locally), the
+    // user should still get a success response for the subscription
+    // itself, just without a workflowRunId, rather than seeing an error
+    // for data that was actually saved successfully.
+    let workflowRunId = null;
+    try {
+      const result = await workflowClient.trigger({
+        url: `${SERVER_URL}/api/v1/workflows/subscription/reminder`,
+        body: {
+          subscriptionId: subscription.id,
+        },
+        headers: {
+          "content-type": "application/json",
+        },
+        retries: 0,
+      });
+      workflowRunId = result.workflowRunId;
+    } catch (workflowError) {
+      console.error(
+        `Failed to schedule reminder workflow for subscription ${subscription.id}:`,
+        workflowError.message,
+      );
+    }
 
     res
       .status(201)
@@ -31,7 +46,7 @@ export const getUserSubscriptions = async (req, res, next) => {
   try {
     if (req.user.id !== req.params.id) {
       const error = new Error("You are not the owner of this account");
-      error.status = 401;
+      error.status = 403;
       throw error;
     }
     //check if the user is the same as the one in token.
@@ -53,7 +68,7 @@ export const getSubscription = async (req, res, next) => {
     }
     if (req.user.id !== subscription.user.toString()) {
       const error = new Error("you are not the owner of this subscription");
-      error.status = 402;
+      error.status = 403;
       throw error;
     }
 
@@ -74,7 +89,7 @@ export const updateSubscription = async (req, res, next) => {
 
     if (subscription.user.toString() !== req.user.id) {
       const error = new Error("You are not the owner of this subscription");
-      error.status = 401;
+      error.status = 403;
       throw error;
     }
 
@@ -118,7 +133,7 @@ export const deleteSubscription = async (req, res, next) => {
 
     if (subscription.user.toString() !== req.user.id) {
       const error = new Error("You are not the owner of this subscription");
-      error.status = 401;
+      error.status = 403;
       throw error;
     }
 
@@ -143,7 +158,7 @@ export const cancelSubscription = async (req, res, next) => {
 
     if (subscription.user.toString() !== req.user.id) {
       const error = new Error("You are not the owner of this subscription");
-      error.status = 401;
+      error.status = 403;
       throw error;
     }
 
